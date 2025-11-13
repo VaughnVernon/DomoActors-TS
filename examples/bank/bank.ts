@@ -332,14 +332,18 @@ async function main(): Promise<void> {
 
   // Cleanup
   rl.close()
+  console.log('Closing stage and stopping all actors...')
+  await stage().close()
   console.log('✅ Bank system stopped\n')
   process.exit(0)
 }
 
 // Handle Ctrl+C gracefully
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\n\n⚠️  Received interrupt signal')
   rl.close()
+  console.log('Closing stage and stopping all actors...')
+  await stage().close()
   console.log('✅ Bank system stopped\n')
   process.exit(0)
 })

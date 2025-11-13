@@ -152,7 +152,7 @@ npm run docs:serve
 
 DomoActors is authored by Vaughn Vernon and maintained as part of the Domo product family.
 
-For issues and feature requests, please visit: https://github.com/VaughnVernon/DomoActors/issues
+For issues and feature requests, please visit: https://github.com/VaughnVernon/DomoActors-TS/issues
 
 ## License
 

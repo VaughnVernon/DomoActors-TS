@@ -51,12 +51,12 @@
   "license": "MPL-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VaughnVernon/DomoActors.git"
+    "url": "git+https://github.com/VaughnVernon/DomoActors-TS.git"
   },
   "bugs": {
-    "url": "https://github.com/VaughnVernon/DomoActors/issues"
+    "url": "https://github.com/VaughnVernon/DomoActors-TS/issues"
   },
-  "homepage": "https://github.com/VaughnVernon/DomoActors#readme",
+  "homepage": "https://github.com/VaughnVernon/DomoActors-TS#readme",
   "engines": {
     "node": ">=18.0.0"
   },

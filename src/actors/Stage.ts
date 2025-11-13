@@ -40,8 +40,8 @@ import { Supervisor } from './Supervisor'
  */
 export interface Stage {
   /**
-   * Returns the stage's unique address.
-   * @returns Stage address
+   * Returns a new unique address of the default `Address` type.
+   * @returns a new unique Address
    */
   address(): Address
 
@@ -175,6 +175,28 @@ export interface Stage {
    * ```
    */
   actorProxyFor<T extends object>(protocol: Protocol, actor: Actor, mailbox: Mailbox): T
+
+  /**
+   * Closes the stage and stops all actors in proper hierarchical order.
+   *
+   * Shutdown sequence:
+   * 1. Application parent actors (which automatically stop their children)
+   * 2. Application supervisor actors
+   * 3. System-level actors (PublicRootActor, then PrivateRootActor)
+   *
+   * This ensures graceful shutdown with proper lifecycle hooks being called.
+   * Actors can perform cleanup in their beforeStop() and afterStop() hooks.
+   *
+   * @returns Promise that resolves when all actors have been stopped
+   *
+   * @example
+   * ```typescript
+   * const myStage = stage()
+   * // ... create actors and run application ...
+   * await myStage.close() // Shutdown all actors gracefully
+   * ```
+   */
+  close(): Promise<void>
 }
 
 /**

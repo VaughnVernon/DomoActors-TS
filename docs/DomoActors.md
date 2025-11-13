@@ -773,9 +773,31 @@ Key actors:
 - **TransactionHistoryActor**: Immutable transaction log
 
 Key supervisors:
-- **TellerSupervisor**: Handles validation errors with ExecutionContext
-- **BankSupervisor**: Manages bank-level failures
-- **TransferSupervisor**: Handles transfer failures and retries
+- **BankSupervisor**: Manages Bank and Teller failures
+- **AccountSupervisor**: Handles Account errors and failures
+- **TransferSupervisor**: Handles Transfer failures and retries
+
+All supervisors use `ExecutionContext` collaborator propagation to see the primary bank request and parameter details. To see supervisors in action, enter some bogus data in a bank command prompt, such as an invalid monetary value (e.g. blah rather than 100.00).
+
+One detail that you will notice is that JavaScript `Promise` rejections are returned up the `await` call stack such that if multiple supervisors are registered along the call stack, all supervisors will be informed of a single failure. For example, when there is a Account failure, the call stack looks like this:
+
+```
+(3) Account -> AccountSupervisor
+(2) Bank -> BankSupervisor
+(1) Teller -> BankSupervisor
+(0) command function in bank.ts
+```
+
+And the following supervisors will be informed in descending order, even though there is no parent-child supervision in this particular chain:
+- `AccountSupervisor`
+- `BankSupervisor`
+  - In some cases `BankSupervisor` may be informed two or more times, such as for the `Bank` and the `Teller`.
+
+In fact, both of these supervisors have the same parent: the `default` supervisor, which is `PublicRootActor`.
+
+This chain of supervision is different from what occurs in a multi-threaded platforms such as when using XOOM/Actors in Java or .NET. In those platforms there is no call stack other than the current Actor's message delivery handler method being invoked from a lambda (function). Thus, there is only ever one informed supervisor unless explicit failure escalation occurs. In the case of the Java and .NET platforms, only `AccountSupervisor` would be informed when an `Account` behavior fails.
+
+The difference in the JavaScript environment is not a problem. It's just different, and it may even offer an advantage in some cases. If you want to avoid multiple supervisors from taking action on a single failure, you can extend `Error` and set a flag in the subclass's instance when the error has been handled by the first supervisor in the call chain. Subsequent supervisors would check for the set flag and only handle and set the flag if it has not already been set.
 
 Run the example:
 ```bash
@@ -969,4 +991,4 @@ Copyright © 2012-2025 Kalele, Inc. All rights reserved.
 
 ## Related Projects
 
-- [VLINGO/XOOM Actors](https://docs.vlingo.io) - Reference implementation in Java
+- [VLINGO/XOOM Actors documentation](https://docs.vlingo.io) and the [Reference implementation in Java](https://github.com/vlingo)

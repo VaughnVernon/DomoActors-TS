@@ -961,8 +961,8 @@ async beforeStop(): Promise<void> {
   // Close connections
   await this.connection.close()
 
-  // Stop child actors
-  await Promise.all(this.children.map(child => child.lifeCycle().stop()))
+  // Stop child actors inside a given actor
+  await Promise.all(this.children.forEach(child => child.stop()))
 }
 ```
 
@@ -982,13 +982,27 @@ See: https://opensource.org/license/rpl-1-5
 Copyright © 2012-2025 Vaughn Vernon. All rights reserved.
 Copyright © 2012-2025 Kalele, Inc. All rights reserved.
 
-## Author
+## About the Creator and Author
 
 **Vaughn Vernon**
-- Author of "Implementing Domain-Driven Design" and "Reactive Messaging Patterns with the Actor Model"
-- Creator of VLINGO/PLATFORM (now XOOM)
-- https://vaughnvernon.com
 
-## Related Projects
-
-- [VLINGO/XOOM Actors documentation](https://docs.vlingo.io) and the [Reference implementation in Java](https://github.com/vlingo)
+- **Creator of the XOOM Platform**
+  - [Product conceived 10 years before GenAI was hip hype](https://kalele.io/xoom-platform/)
+  - [Docs](https://docs.vlingo.io)
+  - [Actors Docs](https://docs.vlingo.io/xoom-actors)
+  - [Reference implementation in Java](https://github.com/vlingo)
+- **Books**:
+  - [_Implementing Domain-Driven Design_]()
+  - [_Reactive Messaging Patterns with the Actor Model_]()
+  - [_Domain-Driven Design Distilled_]()
+  - [_Strategic Monoliths and Microservices_]()
+- **Live and In-Person Training**:
+  - [_Implementing Domain-Driven Design_ and others](https://kalele.io/training/)
+- *__LiveLessons__* video training:
+  - [_Domain-Driven Design Distilled_](https://www.informit.com/store/domain-driven-design-livelessons-video-training-9780134597324)
+    - Available on the [O'Reilly Learning Platform](https://www.oreilly.com/videos/domain-driven-design-distilled/9780134593449/)
+  - [_Strategic Monoliths and Microservices_](https://www.informit.com/store/strategic-monoliths-and-microservices-video-course-9780138268237)
+    - Available on the [O'Reilly Learning Platform](https://www.oreilly.com/videos/strategic-monoliths-and/9780138268251/)
+- **Curator and Editor**: Pearson Addison-Wesley Signature Series
+  - [Vaughn Vernon Signature Series](https://informit.com/awss/vernon)
+- **Personal website**: https://vaughnvernon.com

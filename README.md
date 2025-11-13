@@ -174,10 +174,10 @@ Copyright © 2012-2025 Kalele, Inc. All rights reserved.
   - [Actors Docs](https://docs.vlingo.io/xoom-actors)
   - [Reference implementation in Java](https://github.com/vlingo)
 - **Books**:
-  - [_Implementing Domain-Driven Design_]()
-  - [_Reactive Messaging Patterns with the Actor Model_]()
-  - [_Domain-Driven Design Distilled_]()
-  - [_Strategic Monoliths and Microservices_]()
+  - [_Implementing Domain-Driven Design_](https://www.informit.com/store/implementing-domain-driven-design-9780321834577)
+  - [_Reactive Messaging Patterns with the Actor Model_](https://www.informit.com/store/reactive-messaging-patterns-with-the-actor-model-applications-9780133846881)
+  - [_Domain-Driven Design Distilled_](https://www.informit.com/store/domain-driven-design-distilled-9780134434421)
+  - [_Strategic Monoliths and Microservices_](https://www.informit.com/store/strategic-monoliths-and-microservices-driving-innovation-9780137355464)
 - **Live and In-Person Training**:
   - [_Implementing Domain-Driven Design_ and others](https://kalele.io/training/)
 - *__LiveLessons__* video training:

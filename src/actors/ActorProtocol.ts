@@ -116,6 +116,13 @@ export interface ActorProtocol extends LifeCycle {
   stateSnapshot<S>(): S
 
   /**
+   * Causes the receiving actor to stop and be removed from its stage.
+   * @param timeoutMs Optional timeout for graceful shutdown
+   * @returns Promise that resolves when stop completes
+   */
+  stop(timeoutMs?: number): Promise<void>
+
+  /**
    * Returns whether this actor has been stopped.
    * @returns true if stopped, false otherwise
    */

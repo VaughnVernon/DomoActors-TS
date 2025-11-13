@@ -512,13 +512,13 @@ class MyActor extends Actor {
 }
 ```
 
-#### Example: Bank Teller Supervision
+#### Example: Bank and Teller Supervision
 
 The following is from the DomoActors bank example found in ./examples/bank. This is not as complete as the actual supervisor, but shows the division of responsibility within a supervisor. See the example source code for the full implementation:
 
 ```typescript
-class BankTellerSupervisor extends DefaultSupervisor {
-  // Main entry point - handles the failure and directs recovery
+class BankSupervisor extends DefaultSupervisor {
+
   inform(error: Error, supervised: Supervised): void {
     // Access the ExecutionContext from the supervised actor's environment
     const executionContext = supervised.actor()
@@ -527,22 +527,26 @@ class BankTellerSupervisor extends DefaultSupervisor {
       .getCurrentMessageExecutionContext()
 
     const command = executionContext.getValue<string>('command') || 'unknown'
+    const request = executionContext.getValue<any>('request') || undefined
+
+    // ...
+    const typedRequest = request as DepositRequest
 
     // Handle the failure - print context-aware error message
-    console.log(`\n❌ Error in ${command}: ${error.message}\n`)
+    console.log(`\n❌ Error in ${command} => ${typedRequest.accountNumber} due to:\n${error.message}\n`)
 
-    // Direct recovery by calling parent's inform with the decided directive
+    // Direct recovery by using my parent's inform with the decided directive
     super.inform(error, supervised)
   }
 
-  // Helper method - only determines which directive to use
   protected decideDirective(
     error: Error,
     supervised: Supervised,
     _strategy: SupervisionStrategy
   ): SupervisionDirective {
-    // Always Resume - the teller actor's state is fine,
-    // it just received invalid input. Resume to handle next command.
+
+    // decide how the actor will recovered from failure...
+
     return SupervisionDirective.Resume
   }
 }
@@ -763,13 +767,13 @@ See `examples/bank/` for the complete implementation.
 
 Key actors:
 - **BankActor**: Top-level coordinator
-- **BankTellerActor**: CLI command handler with supervision
+- **TellerActor**: CLI command handler with supervision
 - **AccountActor**: Account operations with child transaction history
 - **TransferCoordinatorActor**: Complex transfer workflow with retries
 - **TransactionHistoryActor**: Immutable transaction log
 
 Key supervisors:
-- **BankTellerSupervisor**: Handles validation errors with ExecutionContext
+- **TellerSupervisor**: Handles validation errors with ExecutionContext
 - **BankSupervisor**: Manages bank-level failures
 - **TransferSupervisor**: Handles transfer failures and retries
 
@@ -777,6 +781,34 @@ Run the example:
 ```bash
 npm run example:bank
 ```
+
+### Encapsulation Demo
+
+The encapsulation demo demonstrates how DomoActors maintains proper encapsulation:
+
+- **Public Protocol Access**: Clients can call actor methods through the protocol interface
+- **Hidden Infrastructure**: Internal actor infrastructure (environment, lifecycle, mailbox) is not accessible to clients
+- **Symbol-Based Internal Access**: Library code can still manage actors internally using Symbol-based access patterns
+- **Type Safety**: TypeScript ensures only the protocol methods are exposed
+
+This demonstrates a key design principle: actors expose only their business logic through protocols while hiding all infrastructure concerns.
+
+Run the example:
+```bash
+npm run example:encapsulation
+```
+
+Expected output:
+```
+✓ Encapsulation successful - clients cannot access internal infrastructure
+✓ Library code can still manage actor hierarchies internally via Symbol
+```
+
+The demo shows that:
+1. `actor.doWork()` - ✅ Works (public protocol method)
+2. `actor.address()` - ✅ Works (public ActorProtocol method)
+3. `actor.environment()` - ❌ Fails (internal infrastructure hidden)
+4. Library code can still access `environment()` via Symbol-based internal access
 
 ## Common Practices
 

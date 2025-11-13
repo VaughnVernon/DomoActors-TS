@@ -6,6 +6,8 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
+import { ActorProtocol } from "./ActorProtocol"
+
 /**
  * Context for storing execution-scoped data.
  *
@@ -17,6 +19,7 @@
  * like distributed tracing, correlation IDs, or transaction boundaries.
  */
 export class ExecutionContext {
+  private _collaborators: ActorProtocol[]
   private _map: Map<string, any>
 
   /**
@@ -24,6 +27,15 @@ export class ExecutionContext {
    */
   constructor() {
     this._map = new Map()
+    this._collaborators = []
+  }
+
+  /**
+   * Records the list of my collaborators to which I propagate my ExecutionContext.
+   * @param collaborators the ActorProtocol[] proxies of all actors to set
+   */
+  collaborators(collaborators: ActorProtocol[]): void {
+    this._collaborators = this._collaborators.concat([...collaborators])
   }
 
   /**
@@ -32,6 +44,7 @@ export class ExecutionContext {
    */
   copy(): ExecutionContext {
     const copy = new ExecutionContext()
+    copy._collaborators = [...this._collaborators]
     copy._map = new Map([...this._map])
     return copy
   }
@@ -73,12 +86,43 @@ export class ExecutionContext {
   }
 
   /**
+   * Sets my key-value pairs on each of the actors in actorProxies.
+   * @param collaborators the ActorProtocol[] proxies of all actors to set
+   */
+  propagate(): void {
+    this._collaborators.forEach(collaborator => {
+      const context = (collaborator as ActorProtocol).executionContext()
+      context.setAll(this._map)
+    })
+  }
+
+  /**
    * Resets my state to have not key-value pairs.
    * @returns Myself so that a value can be set immediately following
    */
   reset(): ExecutionContext {
     this._map.clear()
     return this
+  }
+
+  toString(): string {
+    let representation = 'ExecutionContext: '
+
+    this._collaborators.forEach((actor) => {
+      representation = representation + `\n${actor}}`
+    })
+
+    representation = representation + ' with:\n'
+
+    this._map.forEach((value: any, key: string) => {
+      representation = representation + `${key} = ${value.toString()}\n`
+    })
+
+    return representation
+  }
+
+  private setAll(map: Map<string, any>): void {
+    this._map = new Map([...map])
   }
 }
 

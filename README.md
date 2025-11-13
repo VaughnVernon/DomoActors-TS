@@ -158,7 +158,7 @@ For issues and feature requests, please visit: https://github.com/VaughnVernon/D
 
 Reciprocal Public License 1.5
 
-See: ./LICENSE
+See: ./LICENSE.md
 
 
 Copyright © 2012-2025 Vaughn Vernon. All rights reserved.

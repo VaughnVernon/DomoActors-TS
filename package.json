@@ -14,12 +14,13 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "build:examples": "tsc -p tsconfig.examples.json",
     "example:bank": "npm run build && tsx examples/bank/bank.ts",
+    "example:encapsulation": "npm run build && tsx examples/EncapsulationDemo.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

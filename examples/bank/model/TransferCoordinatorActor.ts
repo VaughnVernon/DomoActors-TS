@@ -29,26 +29,46 @@ export class TransferCoordinatorActor extends Actor implements TransferCoordinat
     this.self = this.selfAs<TransferCoordinator>()
   }
 
-  async registerAccount(accountId: string, account: Account): Promise<void> {
-    this.accounts.set(accountId, account)
+  async registerAccount(accountNumber: string, account: Account): Promise<void> {
+    this.accounts.set(accountNumber, account)
   }
 
   async initiateTransfer(
-    fromAccountId: string,
-    toAccountId: string,
+    fromAccountNumber: string,
+    toAccountNumber: string,
     amount: number
   ): Promise<string> {
+
+    if (Number.isNaN(amount) || amount < 0) {
+      const value = amount ? amount.toString() : 'unknown'
+      throw new Error(`Transfer amount must be a positive monetary value: ${value}`)
+    }
+
+    if (!this.accounts.has(fromAccountNumber)) {
+      const id = fromAccountNumber ? fromAccountNumber : '(missing account number)'
+      throw new Error(`Transfer from account does not exist: ${id}`)
+    }
+
+    if (!this.accounts.has(toAccountNumber)) {
+      const id = toAccountNumber ? toAccountNumber : '(missing account number)'
+      throw new Error(`Transfer to account does not exist: ${id}`)
+    }
+
+    if (fromAccountNumber === toAccountNumber) {
+      throw new Error(`Transfer from account and to account must be different accounts: ${fromAccountNumber} => ${toAccountNumber}`)
+    }
+
     const transactionId = this.generateTransactionId()
 
     this.logger().log(
       `Initiating transfer ${transactionId}: $${amount.toFixed(2)} ` +
-      `from ${fromAccountId} to ${toAccountId}`
+      `from ${fromAccountNumber} to ${toAccountNumber}`
     )
 
     // Step 1: Withdraw from source account
-    const fromAccount = this.accounts.get(fromAccountId)
+    const fromAccount = this.accounts.get(fromAccountNumber)
     if (!fromAccount) {
-      throw new Error(`Source account not found: ${fromAccountId}`)
+      throw new Error(`Source account not found: ${fromAccountNumber}`)
     }
 
     try {
@@ -61,8 +81,8 @@ export class TransferCoordinatorActor extends Actor implements TransferCoordinat
     // Step 2: Self-send to record pending state (async message via mailbox)
     this.self.recordPendingTransfer({
       transactionId,
-      fromAccountId,
-      toAccountId,
+      fromAccountNumber,
+      toAccountNumber,
       amount,
       status: 'withdrawn',
       withdrawnAt: new Date(),
@@ -91,12 +111,12 @@ export class TransferCoordinatorActor extends Actor implements TransferCoordinat
       return
     }
 
-    const toAccount = this.accounts.get(transfer.toAccountId)
+    const toAccount = this.accounts.get(transfer.toAccountNumber)
     if (!toAccount) {
       // Self-send to handle failure (async)
       this.self.handleDepositFailure(
         transactionId,
-        `Destination account not found: ${transfer.toAccountId}`
+        `Destination account not found: ${transfer.toAccountNumber}`
       )
       return
     }
@@ -155,21 +175,21 @@ export class TransferCoordinatorActor extends Actor implements TransferCoordinat
     const transfer = this.pendingTransfers.get(transactionId)
     if (!transfer) return
 
-    const fromAccount = this.accounts.get(transfer.fromAccountId)
+    const fromAccount = this.accounts.get(transfer.fromAccountNumber)
     if (!fromAccount) {
       this.logger().error(
-        `Cannot refund: Source account not found ${transfer.fromAccountId}`
+        `Cannot refund: Source account not found ${transfer.fromAccountNumber}`
       )
       return
     }
 
-    const refundReason = `Transfer to ${transfer.toAccountId} failed: ${reason}. ` +
+    const refundReason = `Transfer to ${transfer.toAccountNumber} failed: ${reason}. ` +
                          `Attempted ${MAX_RETRY_ATTEMPTS} times.`
 
     await fromAccount.refund(transfer.amount, transactionId, refundReason)
 
     this.logger().log(
-      `Transfer ${transactionId}: Refunded $${transfer.amount.toFixed(2)} to ${transfer.fromAccountId}`
+      `Transfer ${transactionId}: Refunded $${transfer.amount.toFixed(2)} to ${transfer.fromAccountNumber}`
     )
 
     transfer.status = 'refunded'
@@ -200,6 +220,6 @@ export class TransferCoordinatorActor extends Actor implements TransferCoordinat
   }
 
   private generateTransactionId(): string {
-    return `tx-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    return `tx-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
   }
 }

@@ -9,11 +9,12 @@
 
 import * as readline from 'readline'
 import { stage, Protocol, Definition } from 'domo-actors'
-import { Bank, BankTeller, RequestType } from './model/BankTypes.js'
+import { Bank, Teller, RequestType } from './model/BankTypes.js'
 import { BankActor } from './model/BankActor.js'
-import { BankTellerActor } from './model/BankTellerActor.js'
+import { TellerActor } from './model/TellerActor.js'
 import { BankSupervisor } from './supervisors/BankSupervisor.js'
-import { BankTellerSupervisor } from './supervisors/BankTellerSupervisor.js'
+import { AccountSupervisor } from './supervisors/AccountSupervisor.js'
+import { TransferSupervisor } from './supervisors/TransferSupervisor.js'
 
 /**
  * Banking System CLI
@@ -33,14 +34,21 @@ const rl = readline.createInterface({
   output: process.stdout
 })
 
-let teller: BankTeller
+let teller: Teller
 
+/**
+ * Prompt the user for the answer to the given question.
+ * @param question the question for which to user us to be prompted for an answer
+ */
 function prompt(question: string): Promise<string> {
   return new Promise((resolve) => {
     rl.question(question, resolve)
   })
 }
 
+/**
+ * Displays the main menu.
+ */
 async function showMenu(): Promise<void> {
   console.log('\n')
   console.log('╔════════════════════════════════════════╗')
@@ -54,10 +62,13 @@ async function showMenu(): Promise<void> {
   console.log('║  6. Transaction History                ║')
   console.log('║  7. List All Accounts                  ║')
   console.log('║  8. Pending Transfers                  ║')
-  console.log('║  9. Exit                               ║')
+  console.log('║  0. Exit                               ║')
   console.log('╚════════════════════════════════════════╝\n')
 }
 
+/**
+ * Open a new account.
+ */
 async function openAccount(): Promise<void> {
   console.log('\n--- Open Account ---')
   const owner = await prompt('Owner name: ')
@@ -75,43 +86,54 @@ async function openAccount(): Promise<void> {
   console.log(result)
 }
 
+/**
+ * Deposit funds into an existing account.
+ */
 async function deposit(): Promise<void> {
   console.log('\n--- Deposit Funds ---')
-  const accountId = await prompt('Account ID: ')
+  const accountNumber = await prompt('Account Number: ')
   const amount = await prompt('Amount: $')
 
-  const request = { accountId, amount }
+  const request = { accountNumber, amount }
 
   teller.executionContext().reset()
     .setValue('command', RequestType.Deposit)
     .setValue('request', request)
 
   const newBalance = await teller.deposit(request)
+
   console.log(`✅ Deposit successful. New balance: $${newBalance.toFixed(2)}`)
 }
 
+/**
+ * Withdraw funds from an existing account.
+ */
 async function withdraw(): Promise<void> {
   console.log('\n--- Withdraw Funds ---')
-  const accountId = await prompt('Account ID: ')
+  const accountNumber = await prompt('Account Number: ')
   const amount = await prompt('Amount: $')
 
-  const request = { accountId, amount }
+  const request = { accountNumber, amount }
 
   teller.executionContext().reset()
     .setValue('command', RequestType.Withdraw)
     .setValue('request', request)
 
   const newBalance = await teller.withdraw(request)
+
   console.log(`✅ Withdrawal successful. New balance: $${newBalance.toFixed(2)}`)
 }
 
+/**
+ * Transfer funds from one account into an another account.
+ */
 async function transfer(): Promise<void> {
   console.log('\n--- Transfer Funds ---')
-  const fromAccountId = await prompt('From Account ID: ')
-  const toAccountId = await prompt('To Account ID: ')
+  const fromAccountNumber = await prompt('From Account Number: ')
+  const toAccountNumber = await prompt('To Account Number: ')
   const amount = await prompt('Amount: $')
 
-  const request = { fromAccountId, toAccountId, amount }
+  const request = { fromAccountNumber, toAccountNumber, amount }
 
   teller.executionContext().reset()
     .setValue('command', RequestType.Transfer)
@@ -128,35 +150,46 @@ async function transfer(): Promise<void> {
   }
 }
 
+/**
+ * Display a summary of an account.
+ */
 async function accountSummary(): Promise<void> {
   console.log('\n--- Account Summary ---')
-  const accountId = await prompt('Account ID: ')
+  const accountNumber = await prompt('Account Number: ')
 
-  const request = { accountId }
+  const request = { accountNumber }
 
   teller.executionContext().reset()
     .setValue('command', RequestType.AccountSummary)
     .setValue('request', request)
 
   const summary = await teller.accountSummary(request)
+
   console.log(summary)
 }
 
+/**
+ * Display the transaction history of an account.
+ */
 async function transactionHistory(): Promise<void> {
   console.log('\n--- Transaction History ---')
-  const accountId = await prompt('Account ID: ')
+  const accountNumber = await prompt('Account Number: ')
   const limit = await prompt('Limit (press Enter for all): ')
 
-  const request = { accountId, limit }
+  const request = { accountNumber, limit }
 
   teller.executionContext().reset()
     .setValue('command', RequestType.TransactionHistory)
     .setValue('request', request)
 
   const history = await teller.transactionHistory(request)
+
   console.log(history)
 }
 
+/**
+ * Display a list of all accounts.
+ */
 async function allAccounts(): Promise<void> {
   console.log('\n--- All Accounts ---')
 
@@ -164,9 +197,13 @@ async function allAccounts(): Promise<void> {
     .setValue('command', RequestType.AllAccounts)
 
   const accounts = await teller.allAccounts()
+
   console.log(accounts)
 }
 
+/**
+ * Display a list of all pending transfers.
+ */
 async function pendingTransfers(): Promise<void> {
   console.log('\n--- Pending Transfers ---')
 
@@ -174,13 +211,15 @@ async function pendingTransfers(): Promise<void> {
     .setValue('command', RequestType.PendingTransfers)
 
   const pending = await teller.pendingTransfers()
+
   console.log(pending)
 }
 
+/**
+ * The main bank entry point, bank component set up, and bank command processing.
+ */
 async function main(): Promise<void> {
   console.log('\n🏦 Starting DomoActors Bank Example...\n')
-
-  const bankStage = stage()
 
   // Create supervisor actors
   const bankSupervisorProtocol: Protocol = {
@@ -190,16 +229,24 @@ async function main(): Promise<void> {
     })
   }
 
-  const tellerSupervisorProtocol: Protocol = {
-    type: () => 'teller-supervisor',
+  const accountSupervisorProtocol: Protocol = {
+    type: () => 'account-supervisor',
     instantiator: () => ({
-      instantiate: () => new BankTellerSupervisor()
+      instantiate: () => new AccountSupervisor()
+    })
+  }
+
+  const transferSupervisorProtocol: Protocol = {
+    type: () => 'transfer-supervisor',
+    instantiator: () => ({
+      instantiate: () => new TransferSupervisor()
     })
   }
 
   // Create supervisor actors (use default supervisor for supervisors themselves)
-  bankStage.actorFor(bankSupervisorProtocol, undefined, 'default')
-  bankStage.actorFor(tellerSupervisorProtocol, undefined, 'default')
+  stage().actorFor(bankSupervisorProtocol, undefined, 'default')
+  stage().actorFor(accountSupervisorProtocol, undefined, 'default')
+  stage().actorFor(transferSupervisorProtocol, undefined, 'default')
 
   // Create Bank actor
   const bankProtocol: Protocol = {
@@ -209,20 +256,20 @@ async function main(): Promise<void> {
     })
   }
 
-  const bank = bankStage.actorFor<Bank>(bankProtocol, undefined, 'bank-supervisor')
+  const bank = stage().actorFor<Bank>(bankProtocol, undefined, 'bank-supervisor')
 
-  // Create BankTeller actor as a child that uses the bank
+  // Create Teller actor as a child that uses the bank
   const tellerProtocol: Protocol = {
-    type: () => 'BankTeller',
+    type: () => 'Teller',
     instantiator: () => ({
       instantiate: (definition: Definition) => {
         const params = definition.parameters()
-        return new BankTellerActor(params[0])
+        return new TellerActor(params[0])
       }
     })
   }
 
-  teller = bankStage.actorFor<BankTeller>(tellerProtocol, undefined, 'teller-supervisor', undefined, bank)
+  teller = stage().actorFor<Teller>(tellerProtocol, undefined, 'bank-supervisor', undefined, bank)
 
   console.log('✅ Bank system initialized\n')
   console.log('This example demonstrates:')
@@ -237,7 +284,7 @@ async function main(): Promise<void> {
 
   while (running) {
     await showMenu()
-    const choice = await prompt('Enter choice (1-9): ')
+    const choice = await prompt('Enter choice (1-8 or 0): ')
 
     try {
       switch (choice.trim()) {
@@ -265,12 +312,12 @@ async function main(): Promise<void> {
         case '8':
           await pendingTransfers()
           break
-        case '9':
+        case '0':
           console.log('\n👋 Shutting down...')
           running = false
           break
         default:
-          console.log('❌ Invalid choice. Please enter 1-9.')
+          console.log('❌ Invalid choice. Please enter 1-8 or 0 to exit.')
       }
     } catch (error) {
       // Errors are already handled by supervision and printed

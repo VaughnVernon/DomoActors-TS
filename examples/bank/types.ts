@@ -22,7 +22,7 @@ export enum AccountType {
  * Information about a bank account.
  */
 export interface AccountInfo {
-  id: string
+  accountNumber: string
   owner: string
   type: AccountType
   balance: number
@@ -63,8 +63,8 @@ export type TransferStatus = 'withdrawn' | 'completed' | 'failed-withdrawal' | '
  */
 export interface PendingTransfer {
   transactionId: string
-  fromAccountId: string
-  toAccountId: string
+  fromAccountNumber: string
+  toAccountNumber: string
   amount: number
   status: TransferStatus
   withdrawnAt: Date

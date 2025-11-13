@@ -6,7 +6,7 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Actor, Protocol, Definition } from 'domo-actors'
+import { Actor, ActorProtocol, Definition, Protocol } from 'domo-actors'
 import { AccountType, AccountInfo, TransferResult, Transaction, PendingTransfer } from '../types.js'
 import { Account, Bank, TransferCoordinator } from './BankTypes.js'
 import { AccountActor } from './AccountActor.js'
@@ -29,39 +29,17 @@ export class BankActor extends Actor implements Bank {
     super()
   }
 
-  async beforeStart(): Promise<void> {
-    // Create long-lived transfer coordinator as child actor
-    const coordinatorProtocol: Protocol = {
-      type: () => 'TransferCoordinator',
-      instantiator: () => ({
-        instantiate: () => new TransferCoordinatorActor()
-      })
-    }
-
-    const coordinatorDefinition = new Definition(
-      'TransferCoordinator',
-      this.address(),  // Not used, stage generates new address
-      []
-    )
-
-    this.transferCoordinator = this.childActorFor<TransferCoordinator>(
-      coordinatorProtocol,
-      coordinatorDefinition
-    )
-
-    this.logger().log('Bank initialized with TransferCoordinator')
-  }
-
   async openAccount(
     owner: string,
     accountType: AccountType,
     initialBalance: number
   ): Promise<string> {
     if (Number.isNaN(initialBalance) || initialBalance < 0) {
-      throw new Error('Initial balance must be positive monetary value')
+      const value = initialBalance ? initialBalance.toString() : 'unknown'
+      throw new Error(`Initial balance must be a positive monetary value: ${value}`)
     }
 
-    const accountId = this.generateAccountId()
+    const accountNumber = this.generateAccountNumber()
 
     // Create account actor as child
     const accountProtocol: Protocol = {
@@ -70,7 +48,7 @@ export class BankActor extends Actor implements Bank {
         instantiate: (definition: Definition) => {
           const params = definition.parameters()
           return new AccountActor(
-            params[0],  // accountId
+            params[0],  // accountNumber
             params[1],  // owner
             params[2],  // accountType
             params[3]   // initialBalance
@@ -82,36 +60,73 @@ export class BankActor extends Actor implements Bank {
     const accountDefinition = new Definition(
       'Account',
       this.address(),  // Not used, stage generates new address
-      [accountId, owner, accountType, initialBalance]
+      [accountNumber, owner, accountType, initialBalance]
     )
 
-    const account = this.childActorFor<Account>(accountProtocol, accountDefinition)
+    const account = this.childActorFor<Account>(accountProtocol, accountDefinition, 'account-supervisor')
 
     // Register with bank and transfer coordinator
-    this.accounts.set(accountId, account)
-    await this.transferCoordinator.registerAccount(accountId, account)
+    this.accounts.set(accountNumber, account)
+    this.executionContext().collaborators([account as ActorProtocol])
+    await this.transferCoordinator.registerAccount(accountNumber, account)
 
     this.logger().log(
-      `Account opened: ${accountId} (${owner}, ${accountType}, $${initialBalance.toFixed(2)})`
+      `Account opened: ${accountNumber} (${owner}, ${accountType}, $${initialBalance.toFixed(2)})`
     )
 
-    return accountId
+    return accountNumber
   }
 
-  async account(accountId: string): Promise<Account | undefined> {
-    return this.accounts.get(accountId)
+  async account(accountNumber: string): Promise<Account | undefined> {
+    return this.accounts.get(accountNumber)
   }
 
-  async accountSummary(accountId: string): Promise<AccountInfo | undefined> {
-    const account = this.accounts.get(accountId)
+  async deposit(accountNumber: string, amount: number): Promise<number> {
+    if (isNaN(amount)) {
+      const value = amount ? amount.toString() : 'unknown'
+      throw new Error(`Deposit amount must be a positive monetary value: ${value}`)
+    }
+
+    if (!accountNumber || accountNumber.trim() === '') {
+      throw new Error('Account Number is required')
+    }
+
+    const account = await this.account(accountNumber.trim())
+    if (!account) {
+      throw new Error(`Account does not exist: ${accountNumber}`)
+    }
+
+    return account.deposit(amount)
+  }
+
+  async withdraw(accountNumber: string, amount: number): Promise<number> {
+    if (isNaN(amount)) {
+      const value = amount ? amount.toString() : 'unknown'
+      throw new Error(`Withdraw amount must be a positive monetary value: ${value}`)
+    }
+
+    if (!accountNumber || accountNumber.trim() === '') {
+      throw new Error('Account Number is required')
+    }
+
+    const account = await this.account(accountNumber.trim())
+    if (!account) {
+      throw new Error(`Account does not exist: ${accountNumber}`)
+    }
+
+    return account.withdraw(amount)
+  }
+
+  async accountSummary(accountNumber: string): Promise<AccountInfo | undefined> {
+    const account = this.accounts.get(accountNumber)
     if (!account) {
       return undefined
     }
     return account.getInfo()
   }
 
-  async accountBalance(accountId: string): Promise<number | undefined> {
-    const account = this.accounts.get(accountId)
+  async accountBalance(accountNumber: string): Promise<number | undefined> {
+    const account = this.accounts.get(accountNumber)
     if (!account) {
       return undefined
     }
@@ -127,42 +142,28 @@ export class BankActor extends Actor implements Bank {
   }
 
   async transfer(
-    fromAccountId: string,
-    toAccountId: string,
+    fromAccountNumber: string,
+    toAccountNumber: string,
     amount: number
   ): Promise<TransferResult> {
-    if (amount <= 0) {
-      return {
-        success: false,
-        error: 'Transfer amount must be positive'
-      }
+    if (isNaN(amount)) {
+      throw new Error(`Invalid amount: "${amount}" is not a number`)
     }
 
-    if (fromAccountId === toAccountId) {
-      return {
-        success: false,
-        error: 'Cannot transfer to the same account'
-      }
+    fromAccountNumber = fromAccountNumber ? fromAccountNumber.trim() : ''
+    if (fromAccountNumber === '') {
+      throw new Error('Source account number is required')
     }
 
-    if (!this.accounts.has(fromAccountId)) {
-      return {
-        success: false,
-        error: `Source account not found: ${fromAccountId}`
-      }
-    }
-
-    if (!this.accounts.has(toAccountId)) {
-      return {
-        success: false,
-        error: `Destination account not found: ${toAccountId}`
-      }
+    toAccountNumber = toAccountNumber ? toAccountNumber.trim() : ''
+    if (toAccountNumber === '') {
+      throw new Error('Destination account number is required')
     }
 
     try {
       const transactionId = await this.transferCoordinator.initiateTransfer(
-        fromAccountId,
-        toAccountId,
+        fromAccountNumber,
+        toAccountNumber,
         amount
       )
 
@@ -178,10 +179,10 @@ export class BankActor extends Actor implements Bank {
     }
   }
 
-  async transactionHistory(accountId: string, limit?: number): Promise<Transaction[]> {
-    const account = this.accounts.get(accountId)
+  async transactionHistory(accountNumber: string, limit?: number): Promise<Transaction[]> {
+    const account = this.accounts.get(accountNumber)
     if (!account) {
-      throw new Error(`Account not found: ${accountId}`)
+      throw new Error(`Account not found: ${accountNumber}`)
     }
     return account.getHistory(limit)
   }
@@ -190,7 +191,33 @@ export class BankActor extends Actor implements Bank {
     return this.transferCoordinator.getPendingTransfers()
   }
 
-  private generateAccountId(): string {
+  async beforeStart(): Promise<void> {
+    // Create long-lived transfer coordinator as child actor
+    const transferCoordinatorProtocol: Protocol = {
+      type: () => 'TransferCoordinator',
+      instantiator: () => ({
+        instantiate: () => new TransferCoordinatorActor()
+      })
+    }
+
+    const transferCoordinatorDefinition = new Definition(
+      'TransferCoordinator',
+      this.address(),  // Not used, stage generates new address
+      []
+    )
+
+    this.transferCoordinator = this.childActorFor<TransferCoordinator>(
+      transferCoordinatorProtocol,
+      transferCoordinatorDefinition,
+      'transfer-supervisor'
+    )
+
+    this.executionContext().collaborators([this.transferCoordinator as ActorProtocol])
+
+    this.logger().log('Bank initialized with TransferCoordinator')
+  }
+
+  private generateAccountNumber(): string {
     const accountNumber = this.nextAccountNumber++
     return `ACC${accountNumber.toString().padStart(6, '0')}`
   }

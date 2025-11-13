@@ -10,6 +10,69 @@ import { ActorProtocol } from 'domo-actors'
 import { AccountInfo, AccountType, PendingTransfer, Transaction, TransferResult, TransferStatus } from '../types.js'
 
 /**
+ * Request types offered by the Bank via the Teller.
+ */
+export enum RequestType {
+  OpenAccount = 'Open Account',
+  Deposit = 'Deposit',
+  Withdraw = 'Withdraw',
+  Transfer = 'Transfer',
+  AccountSummary = 'Account Summary',
+  TransactionHistory = 'Transaction History',
+  AllAccounts = 'All Accounts',
+  PendingTransfers = 'Pending Transfers'
+}
+
+/**
+ * User input for open account command.
+ */
+export interface OpenAccountRequest {
+  owner: string
+  accountType: string
+  initialBalance: string
+}
+
+/**
+ * User input for deposit command.
+ */
+export interface DepositRequest {
+  accountNumber: string
+  amount: string
+}
+
+/**
+ * User input for withdrawal command.
+ */
+export interface WithdrawalRequest {
+  accountNumber: string
+  amount: string
+}
+
+/**
+ * User input for transfer command.
+ */
+export interface TransferRequest {
+  fromAccountNumber: string
+  toAccountNumber: string
+  amount: string
+}
+
+/**
+ * User input for account summary command.
+ */
+export interface AccountSummaryRequest {
+  accountNumber: string
+}
+
+/**
+ * User input for transaction history command.
+ */
+export interface TransactionHistoryRequest {
+  accountNumber: string
+  limit?: string
+}
+
+/**
  * Protocol for bank account operations.
  */
 export interface Account extends ActorProtocol {
@@ -68,7 +131,7 @@ export interface Bank extends ActorProtocol {
    * @param owner Account owner name
    * @param accountType Type of account
    * @param initialBalance Initial balance
-   * @returns Account ID
+   * @returns Account Number
    */
   openAccount(
     owner: string,
@@ -77,25 +140,43 @@ export interface Bank extends ActorProtocol {
   ): Promise<string>
 
   /**
+   * Deposits money into the account.
+   * @param accountNumber Account Number
+   * @param amount Amount to deposit
+   * @returns New balance
+   * @throws Error if wrong input
+   */
+  deposit(accountNumber: string, amount: number): Promise<number>
+
+  /**
+   * Withdraws money from the account.
+   * @param accountNumber Account Number
+   * @param amount Amount to withdraw
+   * @returns New balance
+   * @throws Error if wrong input or insufficient funds
+   */
+  withdraw(accountNumber: string, amount: number): Promise<number>
+
+  /**
    * Gets an account actor reference (for teller operations).
-   * @param accountId Account ID
+   * @param accountNumber Account Number
    * @returns Account actor or undefined
    */
-  account(accountId: string): Promise<Account | undefined>
+  account(accountNumber: string): Promise<Account | undefined>
 
   /**
    * Gets account summary information.
-   * @param accountId Account ID
+   * @param accountNumber Account Number
    * @returns Account info or undefined
    */
-  accountSummary(accountId: string): Promise<AccountInfo | undefined>
+  accountSummary(accountNumber: string): Promise<AccountInfo | undefined>
 
   /**
    * Gets current account balance.
-   * @param accountId Account ID
+   * @param accountNumber Account Number
    * @returns Account balance or undefined if account not found
    */
-  accountBalance(accountId: string): Promise<number | undefined>
+  accountBalance(accountNumber: string): Promise<number | undefined>
 
   /**
    * Lists all accounts.
@@ -105,24 +186,24 @@ export interface Bank extends ActorProtocol {
 
   /**
    * Transfers money between accounts.
-   * @param fromAccountId Source account ID
-   * @param toAccountId Destination account ID
+   * @param fromAccountNumber Source account Number
+   * @param toAccountNumber Destination account Number
    * @param amount Amount to transfer
-   * @returns Transfer result with transaction ID
+   * @returns Transfer result with transaction Number
    */
   transfer(
-    fromAccountId: string,
-    toAccountId: string,
+    fromAccountNumber: string,
+    toAccountNumber: string,
     amount: number
   ): Promise<TransferResult>
 
   /**
    * Gets transaction history for an account.
-   * @param accountId Account ID
+   * @param accountNumber Account Number
    * @param limit Maximum number of transactions
    * @returns Transaction history
    */
-  transactionHistory(accountId: string, limit?: number): Promise<Transaction[]>
+  transactionHistory(accountNumber: string, limit?: number): Promise<Transaction[]>
 
   /**
    * Gets pending transfers.
@@ -132,80 +213,17 @@ export interface Bank extends ActorProtocol {
 }
 
 /**
- * Request types offered by the Bank via the BankTeller.
- */
-export enum RequestType {
-  OpenAccount = 'Open Account',
-  Deposit = 'Deposit',
-  Withdraw = 'Withdraw',
-  Transfer = 'Transfer',
-  AccountSummary = 'Account Summary',
-  TransactionHistory = 'Transaction History',
-  AllAccounts = 'All Accounts',
-  PendingTransfers = 'Pending Transfers'
-}
-
-/**
- * User input for open account command.
- */
-export interface OpenAccountRequest {
-  owner: string
-  accountType: string
-  initialBalance: string
-}
-
-/**
- * User input for deposit command.
- */
-export interface DepositRequest {
-  accountId: string
-  amount: string
-}
-
-/**
- * User input for withdrawal command.
- */
-export interface WithdrawalRequest {
-  accountId: string
-  amount: string
-}
-
-/**
- * User input for transfer command.
- */
-export interface TransferRequest {
-  fromAccountId: string
-  toAccountId: string
-  amount: string
-}
-
-/**
- * User input for account summary command.
- */
-export interface AccountSummaryRequest {
-  accountId: string
-}
-
-/**
- * User input for transaction history command.
- */
-export interface TransactionHistoryRequest {
-  accountId: string
-  limit?: string
-}
-
-/**
- * Protocol for BankTeller operations.
+ * Protocol for Teller operations.
  *
  * Handles CLI commands with validation and error handling through supervision.
  * All parsing errors and invalid inputs will crash the teller,
  * allowing the supervisor to handle error reporting.
  */
-export interface BankTeller extends ActorProtocol {
+export interface Teller extends ActorProtocol {
   /**
    * Open a new account (command 1).
    * @param request User input
-   * @returns Account ID
+   * @returns Account Number
    */
   openAccount(request: OpenAccountRequest): Promise<string>
 
@@ -226,7 +244,7 @@ export interface BankTeller extends ActorProtocol {
   /**
    * Transfer money (command 4).
    * @param request User input
-   * @returns Transaction ID or error message
+   * @returns Transaction Number or error message
    */
   transfer(request: TransferRequest): Promise<{ success: boolean; transactionId?: string; error?: string }>
 
@@ -304,19 +322,19 @@ export interface TransactionHistory extends ActorProtocol {
 export interface TransferCoordinator extends ActorProtocol {
   /**
    * Registers an account with the coordinator.
-   * @param accountId Account ID
+   * @param accountNumber Account Number
    * @param account Account actor reference
    */
-  registerAccount(accountId: string, account: Account): Promise<void>
+  registerAccount(accountNumber: string, account: Account): Promise<void>
 
   /**
    * Initiates a transfer between accounts.
-   * @param fromAccountId Source account ID
-   * @param toAccountId Destination account ID
+   * @param fromAccountNumber Source account Number
+   * @param toAccountNumber Destination account Number
    * @param amount Amount to transfer
    * @returns Transaction ID
    */
-  initiateTransfer(fromAccountId: string, toAccountId: string, amount: number): Promise<string>
+  initiateTransfer(fromAccountNumber: string, toAccountNumber: string, amount: number): Promise<string>
 
   /**
    * Gets the status of a transfer.

@@ -19,63 +19,31 @@ import { TransactionHistoryActor } from './TransactionHistoryActor.js'
  */
 export class AccountActor extends Actor implements Account {
   private balance: number
-  private readonly accountId: string
+  private readonly accountNumber: string
   private readonly owner: string
   private readonly accountType: AccountType
   private readonly createdAt: Date
   private transactionHistory!: TransactionHistory
 
-  constructor(accountId: string, owner: string, accountType: AccountType, initialBalance: number) {
+  constructor(accountNumber: string, owner: string, accountType: AccountType, initialBalance: number) {
     super()
-    this.accountId = accountId
+    this.accountNumber = accountNumber
     this.owner = owner
     this.accountType = accountType
     this.balance = initialBalance
     this.createdAt = new Date()
   }
 
-  async beforeStart(): Promise<void> {
-    // Create child actor for transaction history
-    const historyProtocol: Protocol = {
-      type: () => 'TransactionHistory',
-      instantiator: () => ({
-        instantiate: () => new TransactionHistoryActor()
-      })
-    }
-
-    const historyDefinition = new Definition(
-      'TransactionHistory',
-      this.address(),  // Not used, stage generates new address
-      []
-    )
-
-    this.transactionHistory = this.childActorFor<TransactionHistory>(
-      historyProtocol,
-      historyDefinition
-    )
-
-    // Record initial balance
-    if (this.balance > 0) {
-      await this.transactionHistory.recordTransaction({
-        id: `init-${this.accountId}`,
-        type: 'deposit',
-        amount: this.balance,
-        balance: this.balance,
-        timestamp: this.createdAt,
-        description: 'Initial deposit'
-      })
-    }
-  }
-
   async deposit(amount: number): Promise<number> {
-    if (amount <= 0) {
-      throw new Error('Deposit amount must be positive')
+    if (Number.isNaN(amount) || amount < 0) {
+      const value = amount ? amount.toString() : 'unknown'
+      throw new Error(`Deposit amount must be a positive monetary value: ${value}`)
     }
 
     this.balance += amount
 
     await this.transactionHistory.recordTransaction({
-      id: `dep-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `dep-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       type: 'deposit',
       amount,
       balance: this.balance,
@@ -87,8 +55,9 @@ export class AccountActor extends Actor implements Account {
   }
 
   async withdraw(amount: number): Promise<number> {
-    if (amount <= 0) {
-      throw new Error('Withdrawal amount must be positive')
+    if (Number.isNaN(amount) || amount < 0) {
+      const value = amount ? amount.toString() : 'unknown'
+      throw new Error(`Withdrawal amount must be a positive monetary value: ${value}`)
     }
 
     if (amount > this.balance) {
@@ -98,7 +67,7 @@ export class AccountActor extends Actor implements Account {
     this.balance -= amount
 
     await this.transactionHistory.recordTransaction({
-      id: `wd-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `wd-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       type: 'withdrawal',
       amount,
       balance: this.balance,
@@ -115,7 +84,7 @@ export class AccountActor extends Actor implements Account {
 
   async getInfo(): Promise<AccountInfo> {
     return {
-      id: this.accountId,
+      accountNumber: this.accountNumber,
       owner: this.owner,
       type: this.accountType,
       balance: this.balance,
@@ -141,5 +110,39 @@ export class AccountActor extends Actor implements Account {
 
   async getHistory(limit?: number): Promise<Transaction[]> {
     return this.transactionHistory.getHistory(limit)
+  }
+
+  async beforeStart(): Promise<void> {
+    // Create child actor for transaction history
+    const historyProtocol: Protocol = {
+      type: () => 'TransactionHistory',
+      instantiator: () => ({
+        instantiate: () => new TransactionHistoryActor()
+      })
+    }
+
+    const historyDefinition = new Definition(
+      'TransactionHistory',
+      this.address(),  // Not used, stage generates new address
+      []
+    )
+
+    this.transactionHistory = this.childActorFor<TransactionHistory>(
+      historyProtocol,
+      historyDefinition,
+      'account-supervisor'
+    )
+
+    // Record initial balance
+    if (this.balance > 0) {
+      await this.transactionHistory.recordTransaction({
+        id: `init-${this.accountNumber}`,
+        type: 'deposit',
+        amount: this.balance,
+        balance: this.balance,
+        timestamp: this.createdAt,
+        description: 'Initial deposit'
+      })
+    }
   }
 }

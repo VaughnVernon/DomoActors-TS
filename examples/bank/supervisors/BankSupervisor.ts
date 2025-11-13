@@ -13,14 +13,19 @@ import {
   Supervised
 } from 'domo-actors'
 
-import { failureExplanation } from './FailureInformation'
+import { failureExplanation } from './FailureInformant'
 
 /**
- * Supervisor for Bank actor.
+ * Bank Supervisor.
  *
- * Handles bank-level failures with appropriate recovery strategies.
- * - Resume for validation errors, account lookup failures, child actor issues
- * - Restart for state corruption or unexpected errors
+ * Demonstrates "let it crash" philosophy:
+ * - All parsing errors and validation failures crash the teller
+ * - Supervisor catches errors and accesses ExecutionContext for context
+ * - Supervisor prints user-friendly, context-aware error messages
+ * - Actor is resumed to continue serving the next command
+ *
+ * This is the proper actor model approach: let actors fail fast,
+ * and let supervisors handle recovery and error reporting.
  */
 export class BankSupervisor extends DefaultSupervisor {
   constructor() {
@@ -33,14 +38,14 @@ export class BankSupervisor extends DefaultSupervisor {
     const command = executionContext.getValue<string>('command') || 'unknown'
     const request = executionContext.getValue<any>('request') || undefined
 
-    const explained = failureExplanation(command, request)
+    const highlight = '***'
+    const explained = failureExplanation(error, command, request, 'None', highlight)
 
-    console.log('****************************************************')
-    console.log(`*** ${explained}`)
-    console.log('****************************************************')
-
-    // Print context-aware error message
-    console.error(`\n❌ Error in ${command}: ${error.message}\n`)
+    this.logger().log('**********************************************************************')
+    this.logger().log(`${highlight} Bank Supervisor on behalf of ${supervised.actor().type()}`)
+    this.logger().log(explained)
+    this.logger().log(`${highlight}`)
+    this.logger().log('**********************************************************************')
 
     // Call parent to apply the directive
     await super.inform(error, supervised)
@@ -51,8 +56,7 @@ export class BankSupervisor extends DefaultSupervisor {
     supervised: Supervised,
     _strategy: SupervisionStrategy
   ): SupervisionDirective {
-    // Always Resume - the bank actor's state is fine,
-    // it just received invalid input. Resume to handle next command.
+    // Always Resume
     return SupervisionDirective.Resume
   }
 }

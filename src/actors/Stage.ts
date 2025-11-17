@@ -154,6 +154,79 @@ export interface Stage {
   registerSupervisor(name: string, supervisor: Supervisor): void
 
   /**
+   * Registers a runtime value with the stage.
+   *
+   * This allows applications to register shared runtime objects (such as database
+   * instances, connection pools, or configuration objects) that can be accessed
+   * by actors and other components throughout the application.
+   *
+   * Use namespaced names to avoid conflicts (e.g., 'myapp:database', 'myapp:config').
+   *
+   * @template V The type of value being registered
+   * @param name The name to register the value under
+   * @param value The value to register
+   *
+   * @example
+   * ```typescript
+   * const myStage = stage()
+   * const db = new DatabaseConnection()
+   * myStage.registerValue('myapp:database', db)
+   * ```
+   */
+  registerValue<V>(name: string, value: V): void
+
+  /**
+   * Retrieves a previously registered runtime value.
+   *
+   * Returns the value that was registered under the given name.
+   *
+   * @template V The expected type of the registered value
+   * @param name The name the value was registered under
+   * @returns The registered value
+   * @throws Error if no value is registered under the given name
+   *
+   * @example
+   * ```typescript
+   * const myStage = stage()
+   * const db = myStage.registeredValue<DatabaseConnection>('myapp:database')
+   * await db.query('SELECT * FROM users')
+   * ```
+   */
+  registeredValue<V>(name: string): V
+
+  /**
+   * Removes a previously registered runtime value and returns it.
+   *
+   * This removes the value from the registry and returns it, allowing for cleanup
+   * operations. Subsequent calls to registeredValue() with this name will throw
+   * an error unless the value is registered again.
+   *
+   * Warning: Deregistering a value that actors are still using may cause runtime
+   * errors. Ensure no actors will access this value before deregistering it.
+   *
+   * @template V The expected type of the registered value
+   * @param name The name of the value to deregister
+   * @returns The previously registered value, or undefined if no value was registered under that name
+   *
+   * @example
+   * ```typescript
+   * const myStage = stage()
+   * myStage.registerValue('myapp:database', db)
+   *
+   * // Later, when no longer needed - get value and remove atomically
+   * const db = myStage.deregisterValue<DatabaseConnection>('myapp:database')
+   * if (db) {
+   *   await db.close()  // Clean up the resource
+   * }
+   *
+   * // Trying to deregister again returns undefined
+   * const removed = myStage.deregisterValue('myapp:database')
+   * console.log(removed)  // undefined (already removed)
+   * ```
+   */
+  deregisterValue<V>(name: string): V | undefined
+
+  /**
    * Creates a proxy for an existing actor instance.
    *
    * This is an advanced method primarily used for self-messaging within actors.

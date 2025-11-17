@@ -667,6 +667,342 @@ class MyActor extends Actor {
 }
 ```
 
+### Stage Value Registry
+
+The Stage Value Registry provides a centralized mechanism for registering and sharing runtime objects across all actors in your application. This is particularly useful for dependency injection, configuration management, and resource pooling.
+
+#### Overview
+
+Instead of passing dependencies through actor constructors or maintaining global state, you can register values on the Stage and retrieve them from any actor:
+
+```typescript
+import { stage } from 'domo-actors'
+
+// Register shared resources at application startup
+const database = new DatabaseConnection('postgresql://localhost:5432/mydb')
+const config = { apiKey: 'secret-key', timeout: 5000, maxRetries: 3 }
+
+stage().registerValue('myapp:database', database)
+stage().registerValue('myapp:config', config)
+```
+
+#### Registering Values
+
+Use `registerValue<V>(name: string, value: V)` to register any runtime object:
+
+```typescript
+// Database connections
+const dbPool = new ConnectionPool(10, 'postgresql://localhost:5432/db')
+stage().registerValue<ConnectionPool>('myapp:dbPool', dbPool)
+
+// Configuration objects
+interface AppConfig {
+  apiKey: string
+  timeout: number
+  maxRetries: number
+}
+const config: AppConfig = { apiKey: 'key', timeout: 5000, maxRetries: 3 }
+stage().registerValue<AppConfig>('myapp:config', config)
+
+// Service instances
+const userService = new UserService()
+stage().registerValue<UserService>('services:user', userService)
+
+// Even primitives and functions
+stage().registerValue<string>('app:version', '1.0.0')
+stage().registerValue<(msg: string) => void>('app:logger', console.log)
+```
+
+#### Retrieving Values
+
+Use `registeredValue<V>(name: string): V` to retrieve registered values from any actor:
+
+```typescript
+class UserRepositoryActor extends Actor implements UserRepository {
+  async findUser(id: string): Promise<User> {
+    // Retrieve the database from the stage
+    const db = this.stage().registeredValue<DatabaseConnection>('myapp:database')
+
+    // Use it
+    return await db.query('SELECT * FROM users WHERE id = ?', [id])
+  }
+}
+
+class ApiClientActor extends Actor implements ApiClient {
+  async makeRequest(endpoint: string): Promise<any> {
+    // Retrieve configuration
+    const config = this.stage().registeredValue<AppConfig>('myapp:config')
+
+    // Use config values
+    const response = await fetch(endpoint, {
+      headers: { 'Authorization': `Bearer ${config.apiKey}` },
+      timeout: config.timeout
+    })
+
+    return response.json()
+  }
+}
+```
+
+#### Deregistering Values
+
+Use `deregisterValue<V>(name: string): V | undefined` to remove and retrieve registered values:
+
+```typescript
+// Register a database
+const db = new DatabaseConnection('postgresql://localhost:5432/db')
+stage().registerValue('myapp:database', db)
+
+// Later, when shutting down or no longer needed
+const removed = stage().deregisterValue<DatabaseConnection>('myapp:database')
+if (removed) {
+  await removed.close()  // Clean up the resource
+  console.log('Database connection closed')
+}
+
+// Attempting to access after deregistration throws an error
+try {
+  stage().registeredValue('myapp:database')
+} catch (error) {
+  console.error(error.message)  // "No value registered with name: myapp:database"
+}
+
+// Deregistering non-existent value returns undefined
+const notFound = stage().deregisterValue('nonexistent')
+console.log(notFound)  // undefined
+```
+
+**Use Cases for Deregistration:**
+- **Resource Cleanup**: Close database connections, file handles, or network sockets
+- **Hot Reloading**: Swap out implementations at runtime
+- **Testing**: Clean up between test runs for isolation
+- **Dynamic Configuration**: Update configuration without restarting the application
+
+**Important Warnings:**
+- **Timing is Critical**: Ensure no actors are currently using the value before deregistering
+- **Race Conditions**: If an actor tries to access a value while it's being deregistered, it will throw an error
+- **No Automatic Cleanup**: Deregistration doesn't automatically notify actors; they will error on next access
+
+```typescript
+// Good practice: coordinate deregistration
+async function shutdownDatabase() {
+  // 1. Stop accepting new work
+  await stopCreatingNewActors()
+
+  // 2. Wait for existing actors to finish
+  await waitForActorsToComplete()
+
+  // 3. Deregister and cleanup
+  const db = stage().deregisterValue<Database>('myapp:database')
+  if (db) {
+    await db.close()
+  }
+}
+```
+
+#### Type Safety
+
+The registry is fully type-safe using TypeScript generics:
+
+```typescript
+// Type is inferred from registration
+stage().registerValue<AppConfig>('myapp:config', config)
+
+// Type is checked at retrieval
+const config = stage().registeredValue<AppConfig>('myapp:config')
+// config.apiKey is string (type-safe)
+// config.timeout is number (type-safe)
+```
+
+#### Error Handling
+
+Attempting to retrieve a non-existent value throws an error:
+
+```typescript
+try {
+  const value = stage().registeredValue<string>('nonexistent:key')
+} catch (error) {
+  console.error(error.message)  // "No value registered with name: nonexistent:key"
+}
+```
+
+#### Naming Conventions
+
+Use namespaced keys to avoid conflicts:
+
+```typescript
+// Good - namespaced by application/module
+stage().registerValue('myapp:database', db)
+stage().registerValue('myapp:config', config)
+stage().registerValue('services:user', userService)
+stage().registerValue('services:order', orderService)
+
+// Avoid - generic names can conflict
+stage().registerValue('database', db)  // Too generic
+stage().registerValue('config', config)  // Too generic
+```
+
+#### Common Use Cases
+
+**1. Database Connection Management**
+
+```typescript
+// Application startup
+const pool = new ConnectionPool(10, 'postgresql://localhost:5432/db')
+stage().registerValue('myapp:dbPool', pool)
+
+// In actors
+class AccountActor extends Actor {
+  async save(account: Account): Promise<void> {
+    const pool = this.stage().registeredValue<ConnectionPool>('myapp:dbPool')
+    const connection = await pool.getConnection()
+    try {
+      await connection.execute('INSERT INTO accounts...', account)
+    } finally {
+      connection.release()
+    }
+  }
+}
+```
+
+**2. Configuration Management**
+
+```typescript
+// Load configuration at startup
+const config = loadConfig()  // From file, environment, etc.
+stage().registerValue('myapp:config', config)
+
+// Access from any actor
+class MyActor extends Actor {
+  async process(): Promise<void> {
+    const config = this.stage().registeredValue<Config>('myapp:config')
+    if (config.featureFlags.enableNewFeature) {
+      // Use new feature
+    }
+  }
+}
+```
+
+**3. Service Registry Pattern**
+
+```typescript
+// Register services
+stage().registerValue<UserService>('services:user', new UserService())
+stage().registerValue<OrderService>('services:order', new OrderService())
+stage().registerValue<PaymentService>('services:payment', new PaymentService())
+
+// Use in actors
+class CheckoutActor extends Actor {
+  async checkout(userId: string, orderId: string): Promise<void> {
+    const userService = this.stage().registeredValue<UserService>('services:user')
+    const orderService = this.stage().registeredValue<OrderService>('services:order')
+    const paymentService = this.stage().registeredValue<PaymentService>('services:payment')
+
+    const user = await userService.findById(userId)
+    const order = await orderService.findById(orderId)
+    await paymentService.processPayment(user, order)
+  }
+}
+```
+
+**4. Shared Caches**
+
+```typescript
+// Register cache at startup
+const cache = new LRUCache<string, any>(1000)
+stage().registerValue('myapp:cache', cache)
+
+// Use in actors
+class ProductActor extends Actor {
+  async getProduct(id: string): Promise<Product> {
+    const cache = this.stage().registeredValue<LRUCache>('myapp:cache')
+
+    // Check cache first
+    const cached = cache.get(`product:${id}`)
+    if (cached) return cached
+
+    // Fetch and cache
+    const product = await this.fetchFromDatabase(id)
+    cache.set(`product:${id}`, product)
+    return product
+  }
+}
+```
+
+#### Benefits
+
+1. **Dependency Injection**: Share dependencies without coupling actors to specific implementations
+2. **Configuration Management**: Centralized configuration accessible from any actor
+3. **Resource Pooling**: Share expensive resources (connections, caches) across actors
+4. **Type Safety**: Full TypeScript type inference and checking
+5. **Testability**: Easy to inject mock/stub implementations for testing
+6. **Decoupling**: Actors don't need to know how dependencies are created
+
+#### Best Practices
+
+1. **Register at Startup**: Register all values before creating actors that depend on them
+2. **Use Namespaced Keys**: Prefix keys with your app/module name (e.g., `'myapp:database'`)
+3. **Type Everything**: Always use generic type parameters for type safety
+4. **Immutable Values**: Prefer immutable configuration objects
+5. **Document Dependencies**: Document what values actors expect to be registered
+6. **Test with Mocks**: Register test doubles during testing
+
+```typescript
+// Good practice
+class MyActor extends Actor {
+  // Document expected registered values
+  // Expects: 'myapp:database' (DatabaseConnection)
+  // Expects: 'myapp:config' (AppConfig)
+
+  async process(data: string): Promise<void> {
+    const db = this.stage().registeredValue<DatabaseConnection>('myapp:database')
+    const config = this.stage().registeredValue<AppConfig>('myapp:config')
+    // ...
+  }
+}
+```
+
+#### Testing with Value Registry
+
+In tests, register mock implementations and clean up afterward:
+
+```typescript
+import { describe, it, beforeEach, afterEach } from 'vitest'
+
+describe('MyActor', () => {
+  beforeEach(() => {
+    // Register mock for this test
+    const mockDb = {
+      query: async (sql: string) => [{ id: 1, name: 'Test User' }]
+    }
+    stage().registerValue('myapp:database', mockDb)
+  })
+
+  afterEach(() => {
+    // Clean up after each test
+    stage().deregisterValue('myapp:database')
+  })
+
+  it('should process data using database', async () => {
+    const actor = stage().actorFor<MyActor>(protocol)
+
+    await actor.process('test data')
+    // Actor uses mockDb instead of real database
+  })
+
+  it('should handle different mock behaviors', async () => {
+    // Override the mock for this specific test
+    const differentMock = {
+      query: async () => []  // Empty results
+    }
+    stage().registerValue('myapp:database', differentMock)
+
+    const actor = stage().actorFor<MyActor>(protocol)
+    // Test with different behavior
+  })
+})
+```
+
 ### Dead Letters
 
 Messages that cannot be delivered are sent to the dead letter office:
@@ -936,9 +1272,17 @@ The following are common practices that are sometimes even best practices, but n
 4. **Use TestKit utilities** - Leverage await helpers
 5. **Isolate tests** - Each test should create its own actors
 
+### Dependency Management
+
+1. **Use Stage Value Registry** - Register shared resources (databases, config) for dependency injection
+2. **Namespace registry keys** - Use prefixes like `'myapp:database'` to avoid conflicts
+3. **Register at startup** - Initialize all shared resources before creating actors
+4. **Document dependencies** - Note what registered values each actor expects
+5. **Mock in tests** - Register test doubles for isolated testing
+
 ### Performance
 
-1. **Pool expensive resources** - Share connections, caches, etc.
+1. **Pool expensive resources** - Share connections, caches, etc. via Value Registry
 2. **Use child actors for parallelism** - Spawn workers for concurrent work
 3. **Profile message processing** - Identify bottlenecks
 4. **Choose appropriate mailbox** - Bounded for backpressure, Array for simplicity

@@ -22,6 +22,7 @@ This work is based on the Java version of [XOOM/Actors](https://github.com/vling
 - **Fault Tolerance**: Hierarchical supervision with configurable strategies (Resume, Restart, Stop, Escalate)
 - **Flexible Messaging**: Multiple mailbox implementations (ArrayMailbox, BoundedMailbox with overflow policies)
 - **Type Safety**: Full TypeScript support with Protocol-based type-safe messaging
+- **Value Registry**: Register and share runtime objects (databases, configuration, services) across all actors
 - **Testing Support**: Comprehensive TestKit with utilities for asynchronous testing
 - **Observable State**: Built-in state management with reactive updates
 - **Scheduling**: Task scheduling with cancellation support
@@ -119,6 +120,55 @@ const worker = stage().actorFor<Worker>(
 worker.process('valid')  // Processed: valid
 worker.process('error')  // Supervisor handles error and restarts actor
 ```
+
+## Stage Value Registry
+
+The Stage Value Registry allows you to register and share runtime objects (like database connections, configuration, or service instances) across all actors in your application:
+
+```typescript
+import { Actor, stage } from 'domo-actors'
+
+// Register shared resources at application startup
+const database = new DatabaseConnection('postgresql://localhost:5432/mydb')
+const config = { apiKey: 'secret', timeout: 5000 }
+
+stage().registerValue('myapp:database', database)
+stage().registerValue('myapp:config', config)
+
+// Access registered values from any actor
+class UserRepositoryActor extends Actor {
+  async findUser(id: string) {
+    const db = this.stage().registeredValue<DatabaseConnection>('myapp:database')
+    return await db.query('SELECT * FROM users WHERE id = ?', [id])
+  }
+}
+
+class ApiClientActor extends Actor {
+  async makeRequest(endpoint: string) {
+    const config = this.stage().registeredValue<Config>('myapp:config')
+    // Use config.apiKey and config.timeout
+  }
+}
+
+// Clean up resources when no longer needed
+const db = stage().deregisterValue<DatabaseConnection>('myapp:database')
+if (db) {
+  await db.close()  // Perform cleanup
+}
+```
+
+**Benefits:**
+- **Dependency Injection**: Share dependencies without coupling actors to specific implementations
+- **Configuration Management**: Centralized configuration accessible from any actor
+- **Resource Pooling**: Share connection pools, caches, and other expensive resources
+- **Type Safety**: Full TypeScript type inference with generics
+
+**Best Practices:**
+- Use namespaced keys to avoid conflicts (e.g., `'myapp:database'`, `'myapp:config'`)
+- Register values at application startup before creating actors
+- Use TypeScript generics for type-safe retrieval
+- Use `deregisterValue()` to clean up resources when they're no longer needed
+- Be cautious when deregistering - ensure no actors are still using the value
 
 ## Testing
 

@@ -60,6 +60,8 @@ export class LocalStage implements StageInternal {
   private _defaultParent?: ActorProtocol
   /** Flag to ensure root actors are initialized only once */
   private _rootActorsInitialized: boolean = false
+  /** Registry for runtime values (database instances, config, etc.) */
+  private _registeredValues: Map<string, any> = new Map()
 
   /**
    * Creates a new local stage instance.
@@ -319,6 +321,60 @@ export class LocalStage implements StageInternal {
    */
   registerSupervisor(name: string, supervisor: Supervisor): void {
     this._supervisors.set(name, supervisor)
+  }
+
+  /**
+   * Registers a runtime value with the stage.
+   *
+   * This allows applications to register shared runtime objects (such as database
+   * instances, connection pools, or configuration objects) that can be accessed
+   * by actors and other components throughout the application.
+   *
+   * Use namespaced names to avoid conflicts (e.g., 'myapp:database', 'myapp:config').
+   *
+   * @template V The type of value being registered
+   * @param name The name to register the value under
+   * @param value The value to register
+   */
+  registerValue<V>(name: string, value: V): void {
+    this._registeredValues.set(name, value)
+  }
+
+  /**
+   * Retrieves a previously registered runtime value.
+   *
+   * Returns the value that was registered under the given name.
+   *
+   * @template V The expected type of the registered value
+   * @param name The name the value was registered under
+   * @returns The registered value
+   * @throws Error if no value is registered under the given name
+   */
+  registeredValue<V>(name: string): V {
+    if (!this._registeredValues.has(name)) {
+      throw new Error(`No value registered with name: ${name}`)
+    }
+    return this._registeredValues.get(name) as V
+  }
+
+  /**
+   * Removes a previously registered runtime value and returns it.
+   *
+   * This removes the value from the registry and returns it, allowing for cleanup
+   * operations. Subsequent calls to registeredValue() with this name will throw
+   * an error unless the value is registered again.
+   *
+   * Warning: Deregistering a value that actors are still using may cause runtime
+   * errors. Ensure no actors will access this value before deregistering it.
+   *
+   * @template V The expected type of the registered value
+   * @param name The name of the value to deregister
+   * @returns The previously registered value, or undefined if no value was registered under that name
+   */
+  deregisterValue<V>(name: string): V | undefined {
+    const value = this._registeredValues.get(name) as V | undefined
+    this._registeredValues.delete(name)
+    return value
   }
 
   /**

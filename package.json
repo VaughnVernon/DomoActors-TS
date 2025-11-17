@@ -69,11 +69,11 @@
   },
   "devDependencies": {
     "@types/node": "^24.9.1",
-    "@vitest/coverage-v8": "^2.1.8",
+    "@vitest/coverage-v8": "^4.0.10",
     "tsx": "^4.20.6",
     "typedoc": "^0.28.14",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^4.0.10"
   },
   "dependencies": {
     "uuidv7": "^1.0.2"

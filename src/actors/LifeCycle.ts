@@ -6,11 +6,11 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Environment } from './Environment';
-import { Startable } from './Startable'
-import { Stoppable } from './Stoppable'
-import { INTERNAL_ENVIRONMENT_ACCESS, InternalActorAccess } from './InternalAccess'
-import { StageInternal } from './StageInternal';
+import { Environment } from './Environment.js'
+import { Startable } from './Startable.js'
+import { Stoppable } from './Stoppable.js'
+import { INTERNAL_ENVIRONMENT_ACCESS, InternalActorAccess } from './InternalAccess.js'
+import { StageInternal } from './StageInternal.js'
 
 /**
  * Interface for actor lifecycle management.

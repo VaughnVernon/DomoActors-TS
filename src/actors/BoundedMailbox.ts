@@ -6,10 +6,10 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { DeadLetter } from "./DeadLetters"
-import { Mailbox } from "./Mailbox"
-import { Message, EmptyMessage } from "./Message"
-import { OverflowPolicy } from "./OverflowPolicy"
+import { DeadLetter } from "./DeadLetters.js"
+import { Mailbox } from "./Mailbox.js"
+import { Message, EmptyMessage } from "./Message.js"
+import { OverflowPolicy } from "./OverflowPolicy.js"
 
 /**
  * A bounded mailbox with configurable capacity and overflow handling.

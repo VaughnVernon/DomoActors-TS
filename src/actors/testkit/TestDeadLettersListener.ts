@@ -6,7 +6,7 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { DeadLetter, DeadLettersListener } from "../DeadLetters";
+import { DeadLetter, DeadLettersListener } from "../DeadLetters.js"
 
 /**
  * Test implementation of DeadLettersListener that captures all dead letters

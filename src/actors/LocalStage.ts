@@ -6,25 +6,25 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Actor } from './Actor';
-import { ActorProtocol } from './ActorProtocol';
-import { createActorProxy } from './ActorProxy';
-import { Address } from './Address';
-import { ArrayMailbox } from './ArrayMailbox';
-import { DeadLetters } from './DeadLetters';
-import { Definition } from './Definition';
-import { Directory, DirectoryConfigs } from './Directory';
-import { Environment } from './Environment';
-import { ExecutionContext } from './ExecutionContext';
-import { Uuid7Address } from './Uuid7Address';
-import { LifeCycle } from './LifeCycle';
-import { DefaultLogger, Logger } from './Logger';
-import { Mailbox } from './Mailbox';
-import { Protocol } from './Protocol';
-import { DefaultScheduler, Scheduler } from './Scheduler';
-import { StageInternal } from './StageInternal'
-import { DefaultSupervisionStrategy, StageSupervisedActor, Supervised, Supervisor, SupervisionScope, SupervisionStrategy } from './Supervisor';
-import { INTERNAL_ENVIRONMENT_ACCESS, InternalActorAccess } from './InternalAccess';
+import { Actor } from './Actor.js'
+import { ActorProtocol } from './ActorProtocol.js'
+import { createActorProxy } from './ActorProxy.js'
+import { Address } from './Address.js'
+import { ArrayMailbox } from './ArrayMailbox.js'
+import { DeadLetters } from './DeadLetters.js'
+import { Definition } from './Definition.js'
+import { Directory, DirectoryConfigs } from './Directory.js'
+import { Environment } from './Environment.js'
+import { ExecutionContext } from './ExecutionContext.js'
+import { Uuid7Address } from './Uuid7Address.js'
+import { LifeCycle } from './LifeCycle.js'
+import { DefaultLogger, Logger } from './Logger.js'
+import { Mailbox } from './Mailbox.js'
+import { Protocol } from './Protocol.js'
+import { DefaultScheduler, Scheduler } from './Scheduler.js'
+import { StageInternal } from './StageInternal.js'
+import { DefaultSupervisionStrategy, StageSupervisedActor, Supervised, Supervisor, SupervisionScope, SupervisionStrategy } from './Supervisor.js'
+import { INTERNAL_ENVIRONMENT_ACCESS, InternalActorAccess } from './InternalAccess.js'
 
 /**
  * Local implementation of the Stage actor system runtime.

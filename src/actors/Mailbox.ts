@@ -6,7 +6,7 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Message } from "./Message";
+import { Message } from "./Message.js"
 
 /**
  * Message queue for an actor.

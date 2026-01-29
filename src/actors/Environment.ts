@@ -6,15 +6,15 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Actor } from "./Actor"
-import { ActorProtocol } from "./ActorProtocol"
-import { Address } from "./Address"
-import { Definition } from "./Definition"
-import { EmptyExecutionContext, ExecutionContext } from "./ExecutionContext"
-import { Logger } from "./Logger"
-import { Mailbox } from "./Mailbox"
-import { StageInternal } from "./StageInternal"
-import { Supervisor } from "./Supervisor"
+import { Actor } from "./Actor.js"
+import { ActorProtocol } from "./ActorProtocol.js"
+import { Address } from "./Address.js"
+import { Definition } from "./Definition.js"
+import { EmptyExecutionContext, ExecutionContext } from "./ExecutionContext.js"
+import { Logger } from "./Logger.js"
+import { Mailbox } from "./Mailbox.js"
+import { StageInternal } from "./StageInternal.js"
+import { Supervisor } from "./Supervisor.js"
 
 /**
  * Runtime context and dependencies for an actor.

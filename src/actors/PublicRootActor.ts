@@ -6,9 +6,9 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Actor } from './Actor'
-import { Supervisor, SupervisionStrategy, SupervisionScope, Supervised } from './Supervisor'
-import { StageInternal } from './StageInternal'
+import { Actor } from './Actor.js'
+import { Supervisor, SupervisionStrategy, SupervisionScope, Supervised } from './Supervisor.js'
+import { StageInternal } from './StageInternal.js'
 
 /**
  * PublicRootActor is the default parent for all user-created actors

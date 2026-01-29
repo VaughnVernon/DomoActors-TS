@@ -6,12 +6,12 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Actor } from "./Actor"
-import { createDeferred } from "./DeferredPromise"
-import { EmptyExecutionContext } from "./ExecutionContext"
-import { LocalMessage } from "./LocalMessage"
-import { Mailbox } from "./Mailbox"
-import { INTERNAL_ENVIRONMENT_ACCESS } from "./InternalAccess"
+import { Actor } from "./Actor.js"
+import { createDeferred } from "./DeferredPromise.js"
+import { EmptyExecutionContext } from "./ExecutionContext.js"
+import { LocalMessage } from "./LocalMessage.js"
+import { Mailbox } from "./Mailbox.js"
+import { INTERNAL_ENVIRONMENT_ACCESS } from "./InternalAccess.js"
 
 /**
  * ActorProtocol methods that are exposed synchronously through the proxy

@@ -6,11 +6,11 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { ActorProtocol } from './ActorProtocol'
-import { Address } from './Address'
-import { Directory } from './Directory'
-import { Stage } from './Stage'
-import { StageSupervisedActor } from './Supervisor'
+import { ActorProtocol } from './ActorProtocol.js'
+import { Address } from './Address.js'
+import { Directory } from './Directory.js'
+import { Stage } from './Stage.js'
+import { StageSupervisedActor } from './Supervisor.js'
 
 /**
  * Internal Stage interface with methods that should not be exposed to clients.

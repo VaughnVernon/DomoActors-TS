@@ -6,14 +6,14 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Actor } from "./Actor";
-import { ActorProtocol } from "./ActorProtocol";
-import { ActorFunction, Message, EmptyMessage } from "./Message";
-import { DeferredPromise } from "./DeferredPromise";
-import { DeadLetter } from "./DeadLetters";
-import { EmptyExecutionContext, ExecutionContext } from "./ExecutionContext";
-import { StageInternal } from "./StageInternal";
-import { StageSupervisedActor } from "./Supervisor";
+import { Actor } from "./Actor.js"
+import { ActorProtocol } from "./ActorProtocol.js"
+import { ActorFunction, Message, EmptyMessage } from "./Message.js"
+import { DeferredPromise } from "./DeferredPromise.js"
+import { DeadLetter } from "./DeadLetters.js"
+import { EmptyExecutionContext, ExecutionContext } from "./ExecutionContext.js"
+import { StageInternal } from "./StageInternal.js"
+import { StageSupervisedActor } from "./Supervisor.js"
 
 /**
  * Concrete implementation of Message for local actor invocations.

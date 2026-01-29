@@ -6,8 +6,8 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Actor } from './Actor'
-import { Definition } from './Definition'
+import { Actor } from './Actor.js'
+import { Definition } from './Definition.js'
 
 /**
  * Factory interface for creating actor instances.

@@ -6,8 +6,8 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Address } from './Address'
-import { ActorProtocol } from './ActorProtocol'
+import { Address } from './Address.js'
+import { ActorProtocol } from './ActorProtocol.js'
 
 /**
  * Configuration for Directory capacity tuning.

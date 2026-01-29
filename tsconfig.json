@@ -5,8 +5,8 @@
     "lib": ["ES2022"],
 
     /* Modules */
-    "module": "ES2022",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {

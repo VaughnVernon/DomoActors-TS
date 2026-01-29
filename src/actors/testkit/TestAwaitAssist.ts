@@ -6,7 +6,7 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { ObservableState, ObservableStateProvider } from '../ObservableState'
+import { ObservableState, ObservableStateProvider } from '../ObservableState.js'
 
 /**
  * Options for await utilities.

@@ -6,18 +6,18 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { ActorProtocol } from './ActorProtocol'
-import { Address } from './Address'
-import { DeadLetters } from './DeadLetters'
-import { Definition } from './Definition'
-import { Environment } from './Environment'
-import { ExecutionContext } from './ExecutionContext'
-import { LifeCycle } from './LifeCycle'
-import { Logger } from './Logger'
-import { Protocol } from './Protocol'
-import { Scheduler } from './Scheduler'
-import { stage, Stage } from './Stage'
-import { StageInternal } from './StageInternal'
+import { ActorProtocol } from './ActorProtocol.js'
+import { Address } from './Address.js'
+import { DeadLetters } from './DeadLetters.js'
+import { Definition } from './Definition.js'
+import { Environment } from './Environment.js'
+import { ExecutionContext } from './ExecutionContext.js'
+import { LifeCycle } from './LifeCycle.js'
+import { Logger } from './Logger.js'
+import { Protocol } from './Protocol.js'
+import { Scheduler } from './Scheduler.js'
+import { stage, Stage } from './Stage.js'
+import { StageInternal } from './StageInternal.js'
 
 /**
  * Abstract base class for all actors in the system.

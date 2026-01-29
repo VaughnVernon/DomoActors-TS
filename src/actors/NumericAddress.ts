@@ -6,7 +6,7 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Address, AddressFactory } from "./Address";
+import { Address, AddressFactory } from "./Address.js"
 
 /**
  * Sequential numeric address implementation.

@@ -6,8 +6,8 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { ActorProtocol } from "./ActorProtocol";
-import { createDeferred, DeferredPromise } from "./DeferredPromise";
+import { ActorProtocol } from "./ActorProtocol.js"
+import { createDeferred, DeferredPromise } from "./DeferredPromise.js"
 
 /**
  * Function signature for actor message handlers.

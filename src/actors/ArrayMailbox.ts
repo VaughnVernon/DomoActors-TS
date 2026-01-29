@@ -6,9 +6,9 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { DeadLetter } from "./DeadLetters";
-import { Mailbox } from "./Mailbox";
-import { Message, EmptyMessage } from "./Message";
+import { DeadLetter } from "./DeadLetters.js"
+import { Mailbox } from "./Mailbox.js"
+import { Message, EmptyMessage } from "./Message.js"
 
 /**
  * Unbounded FIFO mailbox implementation using JavaScript arrays.

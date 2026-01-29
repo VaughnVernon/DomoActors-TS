@@ -6,14 +6,14 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Actor } from './Actor'
+import { Actor } from './Actor.js'
 import {
   Supervisor,
   Supervised,
   SupervisionStrategy,
   SupervisionDirective,
   DefaultSupervisionStrategy
-} from './Supervisor'
+} from './Supervisor.js'
 
 /**
  * Abstract base class for supervisor actors.

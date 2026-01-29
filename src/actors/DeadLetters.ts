@@ -6,7 +6,7 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { ActorProtocol } from "./ActorProtocol";
+import { ActorProtocol } from "./ActorProtocol.js"
 
 /**
  * Represents a message that could not be delivered to its target actor.

@@ -6,18 +6,18 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Actor } from './Actor'
-import { ActorProtocol } from './ActorProtocol'
-import { Address } from './Address'
-import { DeadLetters } from './DeadLetters'
-import { Environment } from './Environment'
-import { ExecutionContext } from './ExecutionContext'
-import { LocalStage } from './LocalStage'
-import { Logger } from './Logger'
-import { Mailbox } from './Mailbox'
-import { Protocol } from './Protocol'
-import { Scheduler } from './Scheduler'
-import { Supervisor } from './Supervisor'
+import { Actor } from './Actor.js'
+import { ActorProtocol } from './ActorProtocol.js'
+import { Address } from './Address.js'
+import { DeadLetters } from './DeadLetters.js'
+import { Environment } from './Environment.js'
+import { ExecutionContext } from './ExecutionContext.js'
+import { LocalStage } from './LocalStage.js'
+import { Logger } from './Logger.js'
+import { Mailbox } from './Mailbox.js'
+import { Protocol } from './Protocol.js'
+import { Scheduler } from './Scheduler.js'
+import { Supervisor } from './Supervisor.js'
 
 /**
  * Main entry point and runtime environment for the actor system.

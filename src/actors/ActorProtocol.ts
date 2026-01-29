@@ -6,16 +6,16 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Actor } from './Actor'
-import { Address } from './Address'
-import { DeadLetters } from './DeadLetters'
-import { Definition } from './Definition'
-import { Environment } from './Environment'
-import { ExecutionContext } from './ExecutionContext'
-import { LifeCycle } from './LifeCycle'
-import { Logger } from './Logger'
-import { Scheduler } from './Scheduler'
-import { Stage } from './Stage'
+import { Actor } from './Actor.js'
+import { Address } from './Address.js'
+import { DeadLetters } from './DeadLetters.js'
+import { Definition } from './Definition.js'
+import { Environment } from './Environment.js'
+import { ExecutionContext } from './ExecutionContext.js'
+import { LifeCycle } from './LifeCycle.js'
+import { Logger } from './Logger.js'
+import { Scheduler } from './Scheduler.js'
+import { Stage } from './Stage.js'
 
 /**
  * Core protocol interface for all actors in the system.

@@ -7,7 +7,7 @@
 // See: https://opensource.org/license/rpl-1-5
 
 import { uuidv7 } from 'uuidv7'
-import { Address, AddressFactory } from "./Address"
+import { Address, AddressFactory } from "./Address.js"
 
 /**
  * UUIDv7 address implementation.

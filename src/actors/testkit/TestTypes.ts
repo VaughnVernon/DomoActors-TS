@@ -6,20 +6,20 @@
 // See: LICENSE.md in repository root directory
 // See: https://opensource.org/license/rpl-1-5
 
-import { Actor } from "../Actor";
-import { ActorProtocol } from "../ActorProtocol";
-import { Address } from "../Address";
-import { ArrayMailbox } from "../ArrayMailbox";
-import { DeadLetters } from "../DeadLetters";
-import { Definition } from "../Definition";
-import { Environment } from "../Environment";
-import { EmptyExecutionContext, ExecutionContext } from "../ExecutionContext";
-import { LifeCycle } from "../LifeCycle";
-import { DefaultLogger, Logger } from "../Logger";
-import { Protocol } from "../Protocol";
-import { Scheduler } from "../Scheduler";
-import { stage } from "../Stage";
-import { StageInternal } from "../StageInternal";
+import { Actor } from "../Actor.js"
+import { ActorProtocol } from "../ActorProtocol.js"
+import { Address } from "../Address.js"
+import { ArrayMailbox } from "../ArrayMailbox.js"
+import { DeadLetters } from "../DeadLetters.js"
+import { Definition } from "../Definition.js"
+import { Environment } from "../Environment.js"
+import { EmptyExecutionContext, ExecutionContext } from "../ExecutionContext.js"
+import { LifeCycle } from "../LifeCycle.js"
+import { DefaultLogger, Logger } from "../Logger.js"
+import { Protocol } from "../Protocol.js"
+import { Scheduler } from "../Scheduler.js"
+import { stage } from "../Stage.js"
+import { StageInternal } from "../StageInternal.js"
 
 /**
  * No-op test implementation of Address.

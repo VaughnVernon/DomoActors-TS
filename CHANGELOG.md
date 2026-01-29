@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-01-29
+
+### Changed
+- **ESM Module Resolution**: Updated TypeScript configuration and imports for stricter ESM compliance
+  - Changed `moduleResolution` from `"node"` to `"NodeNext"` in tsconfig.json
+  - Changed `module` from `"ES2022"` to `"NodeNext"` in tsconfig.json
+  - Added explicit `.js` extensions to all internal imports (26 source files)
+
+### Notes
+- This is an internal code quality improvement with no API changes
+- The compiled output remains standard ESM, compatible with all JavaScript runtimes
+- No changes required for library consumers (JS or TS)
+- Continues to work in pure V8 environments (Cloudflare Workers, Deno, Bun, browsers)
+
 ## [1.1.0] - 2025-01-17
 
 ### Added

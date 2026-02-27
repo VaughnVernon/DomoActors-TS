@@ -225,6 +225,7 @@ In DomoActors, an actor consists of:
 When you call a method on an actor proxy, DomoActors:
 
 1. **Converts the call to a message** - The method name and arguments are packaged into a message object
+  - Note: This is very, very fast. It is faster than most dynamic proxy components in other languages, such as Java. While Java proxies can be 5–200x slower than direct calls, JavaScript proxies offer highly optimized interception of operations on objects with less overhead.
 2. **Enqueues the message** - The message object is enqueued to the actor's mailbox (currently FIFO only)
 3. **Returns a Promise** - The caller receives a Promise for the result
 4. **Delivers sequentially** - The mailbox delivers messages one at a time to the actor by calling the message's method on the actor
@@ -241,9 +242,43 @@ const result = await thing.process(data)
 // 3. Return Promise that resolves when processing completes
 ```
 
+#### How DomoActors Fits Into JavaScript `async/await`
+
+JavaScript's single thread guarantees that only one message is ever executing on an actor at a time. Inside `ArrayMailbox`, for example, the `await message.deliver()` guarantees that the while loop won't advance to the next message until the current delivery completes its synchronous work and any awaited promise settles.
+
+For the self-send question — yes, the current message completes before the self-sent message is processed. Here's why:
+
+  1. Actor `A` is processing message `M1` via `deliver()`
+  2. During `M1` processing, `A` sends a message to itself. This becomes message `M2` and `Mailbox`/`ArrayMailbox` `send()` is called
+  3. `send()` pushes `M2` onto the queue (line 139) and calls `this.dispatch()`
+  4. This new `dispatch()` call enters the while loop, calls `receive()`, dequeues `M2`, and hits `await message.deliver()`
+  5. Key point: that `await` returns a _microtask-scheduled_ promise. This recursion into `dispatch()` is now an `async` function that has yielded at the `await`
+  6. Next, control returns up to the original `dispatch()`, which is still inside `await message.deliver()` for `M1`
+  7. `M1`'s `deliver()` finishes, its promise resolves
+  8. The original `dispatch()` loop continues (and finds the queue empty since `M2` was already dequeued)
+  9. Then the _microtask queue_ runs the second `dispatch()`'s continuation, which processes `M2`'s delivery result
+
+So the ordering is guaranteed: `M1` finishes, then `M2` finishes. This is the same sequential message processing guarantee you'd get any synchronous FIFO queue--one message at a time in sequencial order. The single thread plus `await` semantics together enforce it.
+
+So, there are actually two queues at the JavaScript runtime level. JavaScript's event loop has two built-in queues:
+
+1. Microtask queue — where `await` continuations and `.then()` callbacks go. These run to exhaustion after each synchronous task completes, before anything else happens.
+2. Macrotask queue (also called the task queue) — where `setTimeout()`, I/O callbacks, etc. go. The event loop picks one macrotask, runs it, then drains the entire microtask queue, then picks the next macrotask.
+
+So in the actor self-send scenario, when the second `dispatch()` hits `await message.deliver()`, its continuation is placed on the microtask queue. It resumes after the current synchronous execution path (the
+original `M1` delivery) completes.
+
+This means there are actually three queues in play:
+
+- In DomoActors, the concrete mailbox's own queue (`this.queue`): the application-level FIFO queue of actor messages
+- The microtask queue: where `async`/`await` continuations are scheduled
+- The macrotask queue: for I/O, timers, etc.
+
+The mailbox queue is the Actor Model concept. The other two are the JavaScript runtime machinery that makes the single-threaded concurrency work. The mailbox queue feeds into the microtask queue via `async dispatch()`, and JavaScripts' event loop ensures everything executes one piece at a time.
+
 #### Message Ordering
 
-Messages sent from the same actor to another actor are processed in the order in which they were sent:
+To reiterate, messages sent from the same actor to another actor are processed in the order in which they were sent:
 
 ```typescript
 actor.doFirst()   // Processed first

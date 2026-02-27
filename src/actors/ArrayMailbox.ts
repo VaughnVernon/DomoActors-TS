@@ -83,23 +83,19 @@ export class ArrayMailbox implements Mailbox {
 
   /**
    * Self-draining async message delivery.
-   * Dequeues and delivers the next message, then recursively processes
-   * any additional messages that were enqueued during delivery.
-   * This prevents message starvation when concurrent send() calls occur.
+   * Processes messages one at a time from the queue.
+   * Each send() call triggers its own dispatch; concurrent dispatch
+   * calls each dequeue and process separate messages. JavaScript's
+   * single-threaded execution ensures shift() is atomic — no two
+   * dispatch loops will process the same message.
    */
   async dispatch(): Promise<void> {
-    const message = this.receive()
-
-    if (!message.isDeliverable()) {
-      return  // Queue is empty, another dispatch() already processed it
-    }
-
-    // Deliver message (errors handled internally by message)
-    await message.deliver()
-
-    // Check if more messages arrived while we were processing
-    if (this.isReceivable()) {
-      await this.dispatch()  // Recursively process next message
+    while (this.isReceivable()) {
+      const message = this.receive()
+      if (!message.isDeliverable()) {
+        break
+      }
+      await message.deliver()
     }
   }
 

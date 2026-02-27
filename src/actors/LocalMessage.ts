@@ -93,7 +93,7 @@ export class LocalMessage implements Message {
     if (actor.lifeCycle().isStopped()) {
       const deadLetter = new DeadLetter(actor, this.representation())
       actor.deadLetters().failedDelivery(deadLetter)
-      return Promise.resolve(EmptyMessage)
+      return EmptyMessage
     }
 
     // Set the actor's environment ExecutionContext to this message's copy
@@ -105,7 +105,7 @@ export class LocalMessage implements Message {
     try {
       const result = await this.function()(actor)
       this.deferred().resolve(result)
-      return Promise.resolve(EmptyMessage)
+      return EmptyMessage
     } catch (error: unknown) {
       const errorObj = error instanceof Error ? error : new Error(String(error))
 
@@ -122,7 +122,7 @@ export class LocalMessage implements Message {
       const stage = actor.stage() as StageInternal
       stage.handleFailureOf(new StageSupervisedActor(this.to(), actor.actor(), errorObj))
 
-      return Promise.resolve(EmptyMessage)
+      return EmptyMessage
     } finally {
       environment.setCurrentMessageExecutionContext(EmptyExecutionContext)
     }

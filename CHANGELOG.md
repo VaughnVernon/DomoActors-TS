@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-03-03
+
+### Changed
+- **Mailbox dispatch refactored from recursive to iterative**: `ArrayMailbox.dispatch()` and `BoundedMailbox.dispatch()` now use a `while` loop instead of recursive calls, preventing potential stack overflow when processing large message queues
+- **Removed redundant `Promise.resolve()` wrappers in `LocalMessage.deliver()`**: Since `deliver()` is `async`, returned values are already wrapped in a Promise
+
+### Added
+- **ArrayMailbox test suite**: New `ArrayMailbox.test.ts` with 9 tests covering dispatch draining, FIFO ordering, suspension/close behavior, and a 10,000-message stress test validating the iterative dispatch
+
+### Notes
+- No public API changes; all modifications are internal implementation improvements
+- Patch release per Semantic Versioning (no new functionality, no breaking changes)
+
 ## [1.2.0] - 2025-01-29
 
 ### Changed

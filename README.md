@@ -1,5 +1,6 @@
 # DomoActors
 ![DomoActors Logo](./docs/domo-actors-logo.png)
+
 Actor Model toolkit for TypeScript: Fault-tolerant, message-driven concurrency.
 
 [![License: RPL-1.5](https://img.shields.io/badge/License-RPL--1.5-blue.svg)](https://opensource.org/license/rpl-1-5)

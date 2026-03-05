@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-03-05
+
+### Fixed
+- **Async race condition in `ArrayMailbox.dispatch()`**: Added a `dispatching` guard so only one dispatch loop runs at a time — concurrent callers (e.g. `send()`, `resume()`) return immediately when a loop is already active, preventing duplicate message delivery
+- The active loop re-checks `isReceivable()` after each `await`, so it naturally picks up messages queued during delivery and resumes after supervisor-triggered un-suspension
+
+### Added
+- **Project logo**: Added `docs/domo-actors-logo.png`
+
+### Notes
+- No public API changes; patch release per Semantic Versioning
+
 ## [1.2.1] - 2026-03-03
 
 ### Changed

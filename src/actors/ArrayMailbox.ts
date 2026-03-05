@@ -24,6 +24,7 @@ import { Message, EmptyMessage } from "./Message.js"
  */
 export class ArrayMailbox implements Mailbox {
   private closed: boolean
+  private dispatching: boolean
   private suspended: boolean
   private queue: Message[]
 
@@ -33,6 +34,7 @@ export class ArrayMailbox implements Mailbox {
    */
   constructor() {
     this.closed = false
+    this.dispatching = false
     this.suspended = false
     this.queue = []
   }
@@ -84,18 +86,25 @@ export class ArrayMailbox implements Mailbox {
   /**
    * Self-draining async message delivery.
    * Processes messages one at a time from the queue.
-   * Each send() call triggers its own dispatch; concurrent dispatch
-   * calls each dequeue and process separate messages. JavaScript's
-   * single-threaded execution ensures shift() is atomic — no two
-   * dispatch loops will process the same message.
+   * Only one dispatch loop runs at a time — concurrent callers
+   * (send, resume) return immediately when a loop is active.
+   * The active loop re-checks isReceivable() after each message,
+   * so it will pick up messages queued during delivery and also
+   * resume processing after supervisor-triggered un-suspension.
    */
   async dispatch(): Promise<void> {
-    while (this.isReceivable()) {
-      const message = this.receive()
-      if (!message.isDeliverable()) {
-        break
+    if (this.dispatching) return
+    this.dispatching = true
+    try {
+      while (this.isReceivable()) {
+        const message = this.receive()
+        if (!message.isDeliverable()) {
+          break
+        }
+        await message.deliver()
       }
-      await message.deliver()
+    } finally {
+      this.dispatching = false
     }
   }
 

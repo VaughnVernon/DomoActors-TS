@@ -3,7 +3,7 @@
 
 Actor Model toolkit for TypeScript: Fault-tolerant, message-driven concurrency.
 
-[![License: RPL-1.5](https://img.shields.io/badge/License-RPL--1.5-blue.svg)](https://opensource.org/license/rpl-1-5)
+[![License: LGPL-3.0](https://img.shields.io/badge/License-LGPL--3.0-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![npm version](https://img.shields.io/npm/v/domo-actors.svg)](https://www.npmjs.com/package/domo-actors)
 [![V8](https://img.shields.io/badge/V8-Compatible-orange.svg)](https://v8.dev/)
@@ -255,13 +255,13 @@ For issues and feature requests, please visit: https://github.com/VaughnVernon/D
 
 ## License
 
-Reciprocal Public License 1.5
+GNU Lesser General Public License v3.0 (LGPL-3.0)
 
 See: ./LICENSE.md
 
 
-Copyright © 2012-2025 Vaughn Vernon. All rights reserved.
-Copyright © 2012-2025 Kalele, Inc. All rights reserved.
+Copyright © 2012-2026 Vaughn Vernon. All rights reserved.
+Copyright © 2012-2026 Kalele, Inc. All rights reserved.
 
 ## About the Creator and Author
 
